@@ -75,6 +75,7 @@ select option{background:#fff;}
 .paso{display:none;}.paso.active{display:block;}
 .resumen-turno{background:var(--surface2);border-radius:10px;padding:16px;margin:12px 0;border-left:4px solid var(--accent);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 <div id="loading"><div class="spinner"></div><span style="color:var(--text-muted);font-size:13px;">Cargando...</span></div>
@@ -356,7 +357,7 @@ window.confirmarTurno=async function(){
     }
 
     // Enviar email via EmailJS (si está configurado)
-    enviarEmailConfirmacion(nombre, email, tipo, fecha, _horaSeleccionada);
+    enviarEmailConfirmacion(nombre, email, tel, tipo, fecha, _horaSeleccionada, motivo);
 
     document.getElementById('resumen-exito').innerHTML=
       '<strong>'+nombre+'</strong><br>'+
@@ -370,9 +371,16 @@ window.confirmarTurno=async function(){
   }
 };
 
-function enviarEmailConfirmacion(nombre, email, tipo, fecha, hora){
-  // Placeholder para EmailJS - se puede configurar después
-  console.log('Email de confirmación para:', email, nombre, tipo, fecha, hora);
+function enviarEmailConfirmacion(nombre, email, tel, tipo, fecha, hora, motivo){
+  emailjs.init('yHTdnmFGbwea5FgBH');
+  // Email a Emmanuelle
+  emailjs.send('service_63axu59','z35dyc4',{
+    nombre:nombre, tel:tel, tipo:tipo, fecha:fecha, hora:hora, motivo:motivo||'—'
+  });
+  // Email al paciente
+  emailjs.send('service_63axu59','eqh5h9b',{
+    nombre:nombre, email:email, tipo:tipo, fecha:fecha, hora:hora
+  },{to_email:email});
 }
 
 window.nuevoTurno=function(){
