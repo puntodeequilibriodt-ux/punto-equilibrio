@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Punto de Equilibrio — Turnos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f6f2;--surface:#ffffff;--surface2:#f0ede8;--border:#e0dbd2;--text:#2a2a2a;--text-muted:#888;--accent:#7c6d5a;--accent2:#b5a48e;--success:#4a9e6b;--danger:#c0392b;--radius:12px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 24px;text-align:center;}
+header h1{font-family:'Playfair Display',serif;font-size:26px;color:var(--accent);letter-spacing:1px;}
+header p{font-size:13px;color:var(--text-muted);margin-top:4px;}
+.container{max-width:900px;margin:0 auto;padding:24px 16px;}
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--radius);padding:4px;margin-bottom:20px;border:1px solid var(--border);}
+.tab{flex:1;padding:10px;border:none;border-radius:10px;background:transparent;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all 0.2s;text-align:center;}
+.tab.active{background:var(--accent);color:#fff;}
+.panel{display:none;}.panel.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.card h2{font-family:'Playfair Display',serif;font-size:18px;color:var(--accent);margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field.full{grid-column:1/-1;}
+label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);}
+input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select option{background:#fff;}
+.btn{padding:11px 20px;border:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;transition:all 0.15s;}
+.btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:8px;}
+.btn-primary:hover{background:#6a5c4a;}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px;}
+.turno-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.turno-hora{font-family:'Playfair Display',serif;font-size:22px;color:var(--accent);min-width:70px;font-weight:600;}
+.turno-info{flex:1;}
+.turno-nombre{font-size:15px;font-weight:600;}
+.turno-det{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.turno-tipo{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap;}
+.tipo-kinesiologia{background:#e8f4ed;color:#2d7a4f;}
+.tipo-osteopatia{background:#e8eef8;color:#2d4a7a;}
+.estado-badge{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase;}
+.estado-pendiente{background:#fef3cd;color:#856404;}
+.estado-confirmado{background:#d4edda;color:#155724;}
+.estado-cancelado{background:#f8d7da;color:#721c24;}
+.horario-slot{display:inline-block;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;margin:4px;transition:all 0.15s;}
+.horario-slot:hover{border-color:var(--accent);background:var(--surface2);}
+.horario-slot.ocupado{opacity:0.4;cursor:not-allowed;text-decoration:line-through;}
+.horario-slot.seleccionado{background:var(--accent);color:#fff;border-color:var(--accent);}
+.dia-btn{padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;text-align:center;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+.dia-btn:hover{border-color:var(--accent);}
+.dia-btn.seleccionado{background:var(--accent);color:#fff;border-color:var(--accent);}
+.dia-btn.sin-turnos{opacity:0.5;}
+.dias-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;}
+@media(max-width:500px){.dias-grid{grid-template-columns:repeat(4,1fr);}}
+.nav-mes{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.nav-mes button{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;}
+.nav-mes h3{font-family:'Playfair Display',serif;font-size:16px;color:var(--accent);}
+.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:8px;}
+.paciente-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;}
+.paciente-card:hover{border-color:var(--accent);}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
+.modal.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:var(--radius);padding:20px;width:100%;max-width:540px;margin:auto;border:1px solid var(--border);}
+.modal-box h2{font-family:'Playfair Display',serif;font-size:18px;color:var(--accent);margin-bottom:14px;}
+.hc-seccion{background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px;}
+.hc-titulo{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.paso{display:none;}.paso.active{display:block;}
+.resumen-turno{background:var(--surface2);border-radius:10px;padding:16px;margin:12px 0;border-left:4px solid var(--accent);}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div><span style="color:var(--text-muted);font-size:13px;">Cargando...</span></div>
+
+<header>
+  <h1>Punto de Equilibrio</h1>
+  <p>Kinesiología & Osteopatía — Lic. Emmanuelle E. Salgado</p>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('reservar')">📅 Reservar turno</button>
+    <button class="tab" onclick="showTab('agenda')">🗓 Agenda</button>
+    <button class="tab" onclick="showTab('pacientes')">👤 Pacientes</button>
+    <button class="tab" onclick="showTab('config')">⚙️ Configuración</button>
+  </div>
+
+  <!-- RESERVAR TURNO -->
+  <div class="panel active" id="tab-reservar">
+    <!-- PASO 1: Tipo y datos -->
+    <div class="paso active" id="paso-1">
+      <div class="card">
+        <h2>Reservar un turno</h2>
+        <div class="form-grid">
+          <div class="field"><label>Tipo de consulta</label>
+            <select id="r-tipo" onchange="actualizarDuracion()">
+              <option value="kinesiologia">Kinesiología (1 hora)</option>
+              <option value="osteopatia">Osteopatía (1h 30min)</option>
+            </select>
+          </div>
+          <div class="field"><label>Nombre completo</label><input type="text" id="r-nombre" placeholder="Ej: María González"></div>
+          <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="r-tel" placeholder="Ej: 11 1234-5678"></div>
+          <div class="field"><label>Email</label><input type="email" id="r-email" placeholder="tucorreo@mail.com"></div>
+          <div class="field full"><label>Motivo de consulta</label><textarea id="r-motivo" rows="2" placeholder="Describí brevemente tu consulta..."></textarea></div>
+        </div>
+        <button class="btn btn-primary" onclick="irPaso2()">Elegir fecha y horario →</button>
+        <div id="r-msg1" style="display:none;margin-top:8px;font-size:12px;color:var(--danger);"></div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Fecha y hora -->
+    <div class="paso" id="paso-2">
+      <div class="card">
+        <h2>Elegí fecha y horario</h2>
+        <div class="nav-mes">
+          <button onclick="cambiarMes(-1)">← Anterior</button>
+          <h3 id="mes-titulo"></h3>
+          <button onclick="cambiarMes(1)">Siguiente →</button>
+        </div>
+        <div class="dias-grid" id="dias-grid"></div>
+        <div id="horarios-container" style="display:none;">
+          <p class="section-title">Horarios disponibles para <span id="fecha-seleccionada-label"></span></p>
+          <div id="horarios-grid"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn btn-ghost" style="flex:0;" onclick="irPaso1()">← Volver</button>
+          <button class="btn btn-primary" style="flex:1;" onclick="irPaso3()">Confirmar →</button>
+        </div>
+        <div id="r-msg2" style="display:none;margin-top:8px;font-size:12px;color:var(--danger);"></div>
+      </div>
+    </div>
+
+    <!-- PASO 3: Confirmación -->
+    <div class="paso" id="paso-3">
+      <div class="card">
+        <h2>Confirmá tu turno</h2>
+        <div class="resumen-turno" id="resumen-turno"></div>
+        <button class="btn btn-primary" onclick="confirmarTurno()">✓ Confirmar turno</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="irPaso2()">← Volver</button>
+        <div id="r-msg3" style="display:none;margin-top:8px;font-size:12px;"></div>
+      </div>
+    </div>
+
+    <!-- PASO 4: Éxito -->
+    <div class="paso" id="paso-4">
+      <div class="card" style="text-align:center;padding:40px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">✅</div>
+        <h2 style="text-align:center;">¡Turno reservado!</h2>
+        <div class="resumen-turno" id="resumen-exito" style="text-align:left;margin:16px 0;"></div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Te enviamos un email de confirmación. Si necesitás cancelar, contactate con el consultorio.</p>
+        <button class="btn btn-primary" onclick="nuevoTurno()">Reservar otro turno</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div class="panel" id="tab-agenda">
+    <div class="card">
+      <div class="nav-mes">
+        <button onclick="cambiarMesAgenda(-1)">← Anterior</button>
+        <h3 id="mes-agenda-titulo"></h3>
+        <button onclick="cambiarMesAgenda(1)">Siguiente →</button>
+      </div>
+      <div class="dias-grid" id="dias-agenda-grid"></div>
+    </div>
+    <div id="agenda-dia-titulo" style="font-family:'Playfair Display',serif;font-size:16px;color:var(--accent);margin-bottom:10px;"></div>
+    <div id="list-agenda"></div>
+  </div>
+
+  <!-- PACIENTES -->
+  <div class="panel" id="tab-pacientes">
+    <div class="card">
+      <input type="text" id="buscar-paciente" placeholder="Buscar paciente..." oninput="renderPacientes()" style="margin-bottom:0;">
+    </div>
+    <div id="list-pacientes"></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="panel" id="tab-config">
+    <div class="card">
+      <h2>Días y horarios de atención</h2>
+      <div id="config-dias"></div>
+      <button class="btn btn-primary" onclick="guardarConfig()">Guardar configuración</button>
+      <div id="config-msg" style="display:none;margin-top:8px;font-size:12px;color:var(--success);"></div>
+    </div>
+    <div class="card">
+      <h2>Días no disponibles</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Bloqueá días específicos por vacaciones, feriados, etc.</p>
+      <div class="form-grid">
+        <div class="field"><label>Fecha a bloquear</label><input type="date" id="bloqueo-fecha"></div>
+        <div class="field"><label>Motivo</label><input type="text" id="bloqueo-motivo" placeholder="Ej: Feriado, Vacaciones..."></div>
+      </div>
+      <button class="btn btn-primary" onclick="agregarBloqueo()">Bloquear día</button>
+      <div id="list-bloqueos" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PACIENTE -->
+<div class="modal" id="modal-paciente">
+  <div class="modal-box">
+    <h2 id="pac-titulo">Historia Clínica</h2>
+    <div id="pac-contenido"></div>
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+      <p class="section-title">Agregar evolución</p>
+      <textarea id="pac-evolucion" rows="3" placeholder="Escribí la evolución del paciente..."></textarea>
+      <button class="btn btn-primary" onclick="guardarEvolucion()">Guardar evolución</button>
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="cerrarModal('modal-paciente')">Cerrar</button>
+  </div>
+</div>
+
+<!-- MODAL TURNO ADMIN -->
+<div class="modal" id="modal-turno">
+  <div class="modal-box">
+    <h2 id="turno-modal-titulo">Turno</h2>
+    <div id="turno-modal-contenido"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn btn-success btn-sm" onclick="cambiarEstadoTurno('confirmado')">✓ Confirmar</button>
+      <button class="btn btn-danger btn-sm" onclick="cambiarEstadoTurno('cancelado')">✕ Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-turno')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAxTlQTEEs_m5AQjhyPH6Hgn4bgMxWjiaU",
+  authDomain: "punto-equilibrio-efea2.firebaseapp.com",
+  projectId: "punto-equilibrio-efea2",
+  storageBucket: "punto-equilibrio-efea2.firebasestorage.app",
+  messagingSenderId: "795667452986",
+  appId: "1:795667452986:web:76f0366d508f0d80c69103",
+  measurementId: "G-28KFY3QF9B"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ─── ESTADO ────────────────────────────────────────────
+let _turnos=[], _pacientes=[], _config=null, _bloqueos=[];
+let _mesActual=new Date(), _mesAgenda=new Date();
+let _diaSeleccionado=null, _horaSeleccionada=null;
+let _turnoModalId=null, _pacienteModalId=null;
+
+const CONFIG_DEFAULT = {
+  dias: {
+    1: {activo:true, inicio:'14:00', fin:'20:00'},  // lunes
+    2: {activo:true, inicio:'14:00', fin:'20:00'},  // martes
+    3: {activo:true, inicio:'14:00', fin:'20:00'},  // miercoles
+    4: {activo:true, inicio:'14:00', fin:'20:00'},  // jueves
+    5: {activo:true, inicio:'14:00', fin:'20:00'},  // viernes
+    6: {activo:true, inicio:'08:00', fin:'11:00'},  // sabado
+    0: {activo:false, inicio:'', fin:''}            // domingo
+  }
+};
+
+const DURACIONES = {kinesiologia: 60, osteopatia: 90};
+const NOMBRES_DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const NOMBRES_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ─── AUTH ──────────────────────────────────────────────
+const PASS='Fidel2025*';
+let _autenticado=false;
+
+function pedirPassword(tab, tabBtn){
+  if(_autenticado){abrirTab(tab, tabBtn);return;}
+  const clave=prompt('Ingresá la contraseña para acceder:');
+  if(clave===PASS){_autenticado=true;abrirTab(tab, tabBtn);}
+  else if(clave!==null){alert('Contraseña incorrecta.');}
+}
+
+function abrirTab(tab, tabBtn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  tabBtn.classList.add('active');
+  if(tab==='agenda') renderCalendarioAgenda();
+  if(tab==='pacientes') renderPacientes();
+  if(tab==='config') renderConfig();
+}
+
+// ─── TABS ──────────────────────────────────────────────
+window.showTab=function(tab){
+  const tabBtn=event.target;
+  if(tab==='agenda'||tab==='pacientes'||tab==='config'){
+    pedirPassword(tab, tabBtn);
+  } else {
+    abrirTab(tab, tabBtn);
+  }
+};
+
+function showPaso(n){
+  document.querySelectorAll('.paso').forEach(p=>p.classList.remove('active'));
+  document.getElementById('paso-'+n).classList.add('active');
+}
+window.irPaso1=function(){showPaso(1);};
+window.irPaso2=function(){
+  renderCalendarioReserva();
+  showPaso(2);
+};
+window.irPaso3=function(){
+  if(!_diaSeleccionado||!_horaSeleccionada){
+    document.getElementById('r-msg2').textContent='Elegí un día y horario.';
+    document.getElementById('r-msg2').style.display='block';
+    return;
+  }
+  document.getElementById('r-msg2').style.display='none';
+  const tipo=document.getElementById('r-tipo').value;
+  const nombre=document.getElementById('r-nombre').value.trim();
+  const fecha=formatFecha(_diaSeleccionado);
+  document.getElementById('resumen-turno').innerHTML=
+    '<strong>'+nombre+'</strong><br>'+
+    '<span style="color:var(--text-muted)">'+capitalize(tipo)+' • '+fecha+' • '+_horaSeleccionada+'hs • '+(DURACIONES[tipo]/60)+' hora'+(DURACIONES[tipo]>60?'s y media':'')+'</span>';
+  showPaso(3);
+};
+window.irPaso1=function(){showPaso(1);};
+
+window.actualizarDuracion=function(){};
+
+window.irPaso2=function(){
+  const nombre=document.getElementById('r-nombre').value.trim();
+  const tel=document.getElementById('r-tel').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const msg=document.getElementById('r-msg1');
+  if(!nombre||!tel||!email){msg.textContent='Completá nombre, teléfono y email.';msg.style.display='block';return;}
+  msg.style.display='none';
+  _diaSeleccionado=null; _horaSeleccionada=null;
+  renderCalendarioReserva();
+  showPaso(2);
+};
+
+window.confirmarTurno=async function(){
+  const tipo=document.getElementById('r-tipo').value;
+  const nombre=document.getElementById('r-nombre').value.trim();
+  const tel=document.getElementById('r-tel').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const motivo=document.getElementById('r-motivo').value.trim();
+  const fecha=_diaSeleccionado.toISOString().split('T')[0];
+  const msg=document.getElementById('r-msg3');
+  msg.style.display='none';
+
+  // Verificar que no haya conflicto
+  if(hayConflicto(fecha, _horaSeleccionada, DURACIONES[tipo])){
+    msg.textContent='Ese horario ya fue tomado. Por favor elegí otro.';
+    msg.style.color='var(--danger)';
+    msg.style.display='block';
+    return;
+  }
+
+  try {
+    const turnoRef=await addDoc(collection(db,'turnos_pe'),{
+      tipo, nombre, tel, email, motivo,
+      fecha, hora:_horaSeleccionada,
+      duracion:DURACIONES[tipo],
+      estado:'pendiente',
+      creadoEn:Date.now()
+    });
+
+    // Crear/actualizar paciente
+    const pacId='pac_'+nombre.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+    const pacSnap=await getDoc(doc(db,'pacientes_pe',pacId));
+    if(!pacSnap.exists()){
+      await setDoc(doc(db,'pacientes_pe',pacId),{
+        nombre, tel, email, evoluciones:[], creadoEn:Date.now()
+      });
+    }
+
+    // Enviar email via EmailJS (si está configurado)
+    enviarEmailConfirmacion(nombre, email, tel, tipo, fecha, _horaSeleccionada, motivo);
+
+    document.getElementById('resumen-exito').innerHTML=
+      '<strong>'+nombre+'</strong><br>'+
+      '<span style="color:var(--text-muted)">'+capitalize(tipo)+' • '+formatFecha(_diaSeleccionado)+' • '+_horaSeleccionada+'hs</span><br>'+
+      '<span style="color:var(--text-muted);font-size:12px;">📧 Confirmación enviada a '+email+'</span>';
+    showPaso(4);
+  } catch(e){
+    msg.textContent='Error al guardar el turno. Intentá de nuevo.';
+    msg.style.color='var(--danger)';
+    msg.style.display='block';
+  }
+};
+
+function enviarEmailConfirmacion(nombre, email, tel, tipo, fecha, hora, motivo){
+  emailjs.init({publicKey:'yHTdnmFGbwea5FgBH'});
+  // Email a Emmanuelle
+  emailjs.send('service_63axu59','template_05r8gk9',{
+    nombre:nombre, tel:tel, tipo:tipo, fecha:fecha, hora:hora, motivo:motivo||'—'
+  }).then(function(){console.log('Email Emmanuelle OK');},function(e){console.error('Email Emmanuelle ERROR',e);});
+  // Email al paciente se envía cuando Emmanuelle confirma el turno desde la agenda
+}
+
+window.nuevoTurno=function(){
+  document.getElementById('r-nombre').value='';
+  document.getElementById('r-tel').value='';
+  document.getElementById('r-email').value='';
+  document.getElementById('r-motivo').value='';
+  _diaSeleccionado=null; _horaSeleccionada=null;
+  showPaso(1);
+};
+
+// ─── CALENDARIO ────────────────────────────────────────
+function diasEnMes(year,month){return new Date(year,month+1,0).getDate();}
+function primerDiaDelMes(year,month){return new Date(year,month,1).getDay();}
+
+function diaDisponible(fecha){
+  const dow=fecha.getDay();
+  if(!_config) return false;
+  const cfg=_config.dias[dow];
+  if(!cfg||!cfg.activo) return false;
+  // verificar bloqueos
+  const fechaStr=fecha.toISOString().split('T')[0];
+  if(_bloqueos.some(b=>b.fecha===fechaStr)) return false;
+  // no permitir días pasados
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  if(fecha<hoy) return false;
+  return true;
+}
+
+function generarHorarios(fecha, tipo){
+  const dow=fecha.getDay();
+  const cfg=_config.dias[dow];
+  if(!cfg||!cfg.activo) return [];
+  const duracion=DURACIONES[tipo];
+  const [hIni,mIni]=cfg.inicio.split(':').map(Number);
+  const [hFin,mFin]=cfg.fin.split(':').map(Number);
+  const inicioMin=hIni*60+mIni;
+  const finMin=hFin*60+mFin;
+  const slots=[];
+  for(let m=inicioMin;m+duracion<=finMin;m+=30){
+    const h=Math.floor(m/60);
+    const min=m%60;
+    slots.push((h<10?'0':'')+h+':'+(min<10?'0':'')+min);
+  }
+  return slots;
+}
+
+function hayConflicto(fecha, hora, duracion){
+  const [h,m]=hora.split(':').map(Number);
+  const inicioNuevo=h*60+m;
+  const finNuevo=inicioNuevo+duracion;
+  return _turnos.some(function(t){
+    if(t.fecha!==fecha||t.estado==='cancelado') return false;
+    const [th,tm]=t.hora.split(':').map(Number);
+    const ini=th*60+tm;
+    const fin=ini+(t.duracion||60);
+    return inicioNuevo<fin&&finNuevo>ini;
+  });
+}
+
+function renderCalendarioReserva(){
+  const year=_mesActual.getFullYear();
+  const month=_mesActual.getMonth();
+  document.getElementById('mes-titulo').textContent=NOMBRES_MESES[month]+' '+year;
+  const grid=document.getElementById('dias-grid');
+  let html='';
+  // cabecera
+  NOMBRES_DIAS.forEach(function(d){html+='<div style="font-size:10px;text-align:center;color:var(--text-muted);font-weight:600;">'+d+'</div>';});
+  // espacios vacíos
+  const primero=primerDiaDelMes(year,month);
+  for(let i=0;i<primero;i++) html+='<div></div>';
+  const dias=diasEnMes(year,month);
+  for(let d=1;d<=dias;d++){
+    const fecha=new Date(year,month,d);
+    const disponible=diaDisponible(fecha);
+    const seleccionado=_diaSeleccionado&&_diaSeleccionado.toDateString()===fecha.toDateString();
+    html+='<div class="dia-btn '+(seleccionado?'seleccionado':disponible?'':'sin-turnos')+'" onclick="seleccionarDia('+year+','+month+','+d+')" '+(disponible?'':'style="cursor:not-allowed;"')+'>'+d+'</div>';
+  }
+  grid.innerHTML=html;
+  renderHorarios();
+}
+
+window.seleccionarDia=function(y,m,d){
+  const fecha=new Date(y,m,d);
+  if(!diaDisponible(fecha)) return;
+  _diaSeleccionado=fecha;
+  _horaSeleccionada=null;
+  renderCalendarioReserva();
+};
+
+function renderHorarios(){
+  const container=document.getElementById('horarios-container');
+  if(!_diaSeleccionado){container.style.display='none';return;}
+  container.style.display='block';
+  document.getElementById('fecha-seleccionada-label').textContent=formatFecha(_diaSeleccionado);
+  const tipo=document.getElementById('r-tipo').value;
+  const fechaStr=_diaSeleccionado.toISOString().split('T')[0];
+  const slots=generarHorarios(_diaSeleccionado,tipo);
+  const grid=document.getElementById('horarios-grid');
+  if(!slots.length){grid.innerHTML='<p style="color:var(--text-muted);font-size:13px;">No hay horarios disponibles.</p>';return;}
+  grid.innerHTML=slots.map(function(h){
+    const ocupado=hayConflicto(fechaStr,h,DURACIONES[tipo]);
+    const sel=_horaSeleccionada===h;
+    return '<div class="horario-slot '+(ocupado?'ocupado':sel?'seleccionado':'')+'" onclick="'+(ocupado?'':'seleccionarHora(\''+h+'\')')+'">'+h+'</div>';
+  }).join('');
+}
+
+window.seleccionarHora=function(h){
+  _horaSeleccionada=h;
+  renderHorarios();
+};
+
+window.cambiarMes=function(delta){
+  _mesActual=new Date(_mesActual.getFullYear(),_mesActual.getMonth()+delta,1);
+  renderCalendarioReserva();
+};
+
+// ─── AGENDA ────────────────────────────────────────────
+let _diaAgenda=null;
+
+function renderCalendarioAgenda(){
+  const year=_mesAgenda.getFullYear();
+  const month=_mesAgenda.getMonth();
+  document.getElementById('mes-agenda-titulo').textContent=NOMBRES_MESES[month]+' '+year;
+  const grid=document.getElementById('dias-agenda-grid');
+  let html='';
+  NOMBRES_DIAS.forEach(function(d){html+='<div style="font-size:10px;text-align:center;color:var(--text-muted);font-weight:600;">'+d+'</div>';});
+  const primero=primerDiaDelMes(year,month);
+  for(let i=0;i<primero;i++) html+='<div></div>';
+  const dias=diasEnMes(year,month);
+  for(let d=1;d<=dias;d++){
+    const fecha=new Date(year,month,d);
+    const fechaStr=fecha.toISOString().split('T')[0];
+    const tieneTurnos=_turnos.some(t=>t.fecha===fechaStr&&t.estado!=='cancelado');
+    const sel=_diaAgenda&&_diaAgenda===fechaStr;
+    html+='<div class="dia-btn '+(sel?'seleccionado':'')+'" onclick="seleccionarDiaAgenda(\''+fechaStr+'\')" style="position:relative;">'+d+(tieneTurnos?'<span style="position:absolute;top:2px;right:2px;width:6px;height:6px;background:var(--accent);border-radius:50%;"></span>':'')+'</div>';
+  }
+  grid.innerHTML=html;
+  if(_diaAgenda) renderTurnosDia(_diaAgenda);
+}
+
+window.seleccionarDiaAgenda=function(fechaStr){
+  _diaAgenda=fechaStr;
+  renderCalendarioAgenda();
+  renderTurnosDia(fechaStr);
+};
+
+function renderTurnosDia(fechaStr){
+  const fecha=new Date(fechaStr+'T12:00:00');
+  document.getElementById('agenda-dia-titulo').textContent=formatFecha(fecha);
+  const turnos=_turnos.filter(t=>t.fecha===fechaStr).sort((a,b)=>a.hora.localeCompare(b.hora));
+  const el=document.getElementById('list-agenda');
+  if(!turnos.length){el.innerHTML='<div class="empty">No hay turnos para este día</div>';return;}
+  el.innerHTML=turnos.map(function(t){
+    return '<div class="turno-card" onclick="abrirTurno(\''+t.fireId+'\')" style="cursor:pointer;">'+
+      '<div class="turno-hora">'+t.hora+'</div>'+
+      '<div class="turno-info">'+
+        '<div class="turno-nombre">'+t.nombre+'</div>'+
+        '<div class="turno-det">'+t.tel+' • '+t.email+(t.motivo?' • '+t.motivo:'')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'+
+        '<span class="turno-tipo tipo-'+t.tipo+'">'+capitalize(t.tipo)+'</span>'+
+        '<span class="estado-badge estado-'+t.estado+'">'+capitalize(t.estado)+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+window.cambiarMesAgenda=function(delta){
+  _mesAgenda=new Date(_mesAgenda.getFullYear(),_mesAgenda.getMonth()+delta,1);
+  renderCalendarioAgenda();
+};
+
+window.abrirTurno=function(id){
+  _turnoModalId=id;
+  const t=_turnos.find(x=>x.fireId===id);
+  document.getElementById('turno-modal-titulo').textContent=t.nombre;
+  document.getElementById('turno-modal-contenido').innerHTML=
+    '<div class="hc-seccion">'+
+    '<div class="hc-titulo">Datos del turno</div>'+
+    '<div style="font-size:13px;line-height:1.8;">'+
+    '📅 '+formatFecha(new Date(t.fecha+'T12:00:00'))+' • '+t.hora+'hs<br>'+
+    '🩺 '+capitalize(t.tipo)+' ('+t.duracion+' min)<br>'+
+    '📞 '+t.tel+'<br>'+
+    '📧 '+t.email+
+    (t.motivo?'<br>💬 '+t.motivo:'')+
+    '</div></div>';
+  document.getElementById('modal-turno').classList.add('open');
+};
+
+window.cambiarEstadoTurno=async function(estado){
+  if(!_turnoModalId) return;
+  const t=_turnos.find(x=>x.fireId===_turnoModalId);
+  await updateDoc(doc(db,'turnos_pe',_turnoModalId),{estado});
+  if(estado==='confirmado' && t){
+    emailjs.init({publicKey:'yHTdnmFGbwea5FgBH'});
+    emailjs.send('service_63axu59','template_aurn307',{
+      nombre:t.nombre, to_email:t.email, tipo:t.tipo, fecha:t.fecha, hora:t.hora
+    }).then(function(){console.log('Email confirmacion OK');},function(e){console.error('Email confirmacion ERROR',e);});
+  }
+  cerrarModal('modal-turno');
+  if(_diaAgenda) renderTurnosDia(_diaAgenda);
+};
+
+// ─── PACIENTES ─────────────────────────────────────────
+window.renderPacientes=function(){
+  const buscar=document.getElementById('buscar-paciente').value.toLowerCase();
+  const el=document.getElementById('list-pacientes');
+  let pacs=[..._pacientes].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  if(buscar) pacs=pacs.filter(p=>p.nombre.toLowerCase().includes(buscar)||p.email.toLowerCase().includes(buscar));
+  if(!pacs.length){el.innerHTML='<div class="empty">No hay pacientes registrados todavía</div>';return;}
+  el.innerHTML=pacs.map(function(p){
+    const turnos=_turnos.filter(t=>t.email===p.email);
+    return '<div class="paciente-card" onclick="abrirPaciente(\''+p.fireId+'\')">'+
+      '<div style="font-size:15px;font-weight:600;">'+p.nombre+'</div>'+
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">'+p.tel+' • '+p.email+' • '+turnos.length+' turno'+(turnos.length!==1?'s':'')+'</div>'+
+    '</div>';
+  }).join('');
+};
+
+window.abrirPaciente=function(id){
+  _pacienteModalId=id;
+  const p=_pacientes.find(x=>x.fireId===id);
+  const turnos=_turnos.filter(t=>t.email===p.email).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  document.getElementById('pac-titulo').textContent=p.nombre;
+  document.getElementById('pac-evolucion').value='';
+  let html='<div class="hc-seccion"><div class="hc-titulo">Datos de contacto</div>'+
+    '<div style="font-size:13px;line-height:1.8;">📞 '+p.tel+'<br>📧 '+p.email+'</div></div>';
+  if(turnos.length){
+    html+='<div class="hc-seccion"><div class="hc-titulo">Historial de turnos</div>';
+    turnos.forEach(function(t){
+      html+='<div style="font-size:12px;color:var(--text-muted);padding:4px 0;border-bottom:1px solid var(--border);">'+
+        formatFecha(new Date(t.fecha+'T12:00:00'))+' '+t.hora+'hs — '+capitalize(t.tipo)+
+        ' <span class="estado-badge estado-'+t.estado+'">'+capitalize(t.estado)+'</span></div>';
+    });
+    html+='</div>';
+  }
+  if(p.evoluciones&&p.evoluciones.length){
+    html+='<div class="hc-seccion"><div class="hc-titulo">Evoluciones</div>';
+    p.evoluciones.slice().reverse().forEach(function(e){
+      html+='<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);">'+
+        '<div style="font-size:10px;color:var(--text-muted);">'+e.fecha+'</div>'+e.texto+'</div>';
+    });
+    html+='</div>';
+  }
+  document.getElementById('pac-contenido').innerHTML=html;
+  document.getElementById('modal-paciente').classList.add('open');
+};
+
+window.guardarEvolucion=async function(){
+  if(!_pacienteModalId) return;
+  const texto=document.getElementById('pac-evolucion').value.trim();
+  if(!texto){alert('Escribí la evolución.');return;}
+  const p=_pacientes.find(x=>x.fireId===_pacienteModalId);
+  const evoluciones=[...(p.evoluciones||[]),{fecha:new Date().toLocaleDateString('es-AR'),texto}];
+  await updateDoc(doc(db,'pacientes_pe',_pacienteModalId),{evoluciones});
+  cerrarModal('modal-paciente');
+};
+
+// ─── CONFIG ────────────────────────────────────────────
+const DIAS_NOMBRES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+function renderConfig(){
+  const cfg=_config||CONFIG_DEFAULT;
+  let html='';
+  [1,2,3,4,5,6,0].forEach(function(dow){
+    const d=cfg.dias[dow]||{activo:false,inicio:'',fin:''};
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">'+
+      '<input type="checkbox" id="cfg-activo-'+dow+'" '+(d.activo?'checked':'')+' onchange="toggleDia('+dow+')" style="width:auto;">'+
+      '<label style="min-width:90px;font-size:14px;font-weight:500;text-transform:none;letter-spacing:0;">'+DIAS_NOMBRES[dow]+'</label>'+
+      '<input type="time" id="cfg-ini-'+dow+'" value="'+d.inicio+'" style="width:120px;" '+(d.activo?'':'disabled')+'>'+
+      '<span style="color:var(--text-muted);">a</span>'+
+      '<input type="time" id="cfg-fin-'+dow+'" value="'+d.fin+'" style="width:120px;" '+(d.activo?'':'disabled')+'>'+
+    '</div>';
+  });
+  document.getElementById('config-dias').innerHTML=html;
+  renderBloqueos();
+}
+
+window.toggleDia=function(dow){
+  const activo=document.getElementById('cfg-activo-'+dow).checked;
+  document.getElementById('cfg-ini-'+dow).disabled=!activo;
+  document.getElementById('cfg-fin-'+dow).disabled=!activo;
+};
+
+window.guardarConfig=async function(){
+  const dias={};
+  [0,1,2,3,4,5,6].forEach(function(dow){
+    dias[dow]={
+      activo:document.getElementById('cfg-activo-'+dow).checked,
+      inicio:document.getElementById('cfg-ini-'+dow).value,
+      fin:document.getElementById('cfg-fin-'+dow).value
+    };
+  });
+  await setDoc(doc(db,'config_pe','horarios'),{dias});
+  const msg=document.getElementById('config-msg');
+  msg.textContent='✔ Configuración guardada.';
+  msg.style.display='block';
+  setTimeout(function(){msg.style.display='none';},2500);
+};
+
+window.agregarBloqueo=async function(){
+  const fecha=document.getElementById('bloqueo-fecha').value;
+  const motivo=document.getElementById('bloqueo-motivo').value.trim();
+  if(!fecha){alert('Elegí una fecha.');return;}
+  await addDoc(collection(db,'bloqueos_pe'),{fecha,motivo,creadoEn:Date.now()});
+  document.getElementById('bloqueo-fecha').value='';
+  document.getElementById('bloqueo-motivo').value='';
+};
+
+function renderBloqueos(){
+  const el=document.getElementById('list-bloqueos');
+  if(!el) return;
+  if(!_bloqueos.length){el.innerHTML='<p style="font-size:13px;color:var(--text-muted);">No hay días bloqueados.</p>';return;}
+  el.innerHTML=_bloqueos.sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(function(b){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">'+
+      '<span style="font-size:13px;flex:1;">'+formatFecha(new Date(b.fecha+'T12:00:00'))+(b.motivo?' — '+b.motivo:'')+'</span>'+
+      '<button class="btn btn-sm btn-danger" onclick="eliminarBloqueo(\''+b.fireId+'\')">✕</button>'+
+    '</div>';
+  }).join('');
+}
+
+window.eliminarBloqueo=async function(id){
+  await deleteDoc(doc(db,'bloqueos_pe',id));
+};
+
+// ─── MODALES ───────────────────────────────────────────
+window.cerrarModal=function(id){
+  document.getElementById(id).classList.remove('open');
+  _turnoModalId=null; _pacienteModalId=null;
+};
+
+// ─── HELPERS ───────────────────────────────────────────
+function formatFecha(fecha){
+  return fecha.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+}
+function capitalize(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
+
+// ─── LISTENERS FIREBASE ────────────────────────────────
+onSnapshot(collection(db,'turnos_pe'),function(snap){
+  _turnos=snap.docs.map(function(d){return Object.assign({fireId:d.id},d.data());});
+  if(_diaAgenda) renderTurnosDia(_diaAgenda);
+  renderHorarios();
+});
+onSnapshot(collection(db,'pacientes_pe'),function(snap){
+  _pacientes=snap.docs.map(function(d){return Object.assign({fireId:d.id},d.data());});
+});
+onSnapshot(collection(db,'bloqueos_pe'),function(snap){
+  _bloqueos=snap.docs.map(function(d){return Object.assign({fireId:d.id},d.data());});
+  renderBloqueos();
+});
+onSnapshot(doc(db,'config_pe','horarios'),function(snap){
+  _config=snap.exists()?snap.data():CONFIG_DEFAULT;
+  document.getElementById('loading').style.display='none';
+  renderCalendarioReserva();
+});
+</script>
+</body>
+</html>
